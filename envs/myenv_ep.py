@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from multiagent.core import World, Agent, Landmark
 from multiagent.scenario import BaseScenario
@@ -52,13 +54,48 @@ class Scenario(BaseScenario):
         for agent in world.agents:
             agent.goal_a = goal
         # set random initial states
-        for agent in world.agents:
-            agent.state.p_pos = np.random.uniform(-15, +15, world.dim_p)
-            agent.state.p_vel = np.zeros(world.dim_p)
-            agent.state.c = np.zeros(world.dim_c)
-        for i, landmark in enumerate(world.landmarks):
-            landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
-            landmark.state.p_vel = np.zeros(world.dim_p)
+        if self.mode == 0: # for training
+            # for agent in world.agents:
+            #     agent.state.p_pos = np.random.uniform(-15, +15, world.dim_p)
+            #     agent.state.p_vel = np.zeros(world.dim_p)
+            #     agent.state.c = np.zeros(world.dim_c)
+            # for i, landmark in enumerate(world.landmarks):
+            #     landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
+            #     landmark.state.p_vel = np.zeros(world.dim_p)
+            for i, landmark in enumerate(world.landmarks):
+                landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
+                landmark.state.p_vel = np.zeros(world.dim_p)
+            for agent in world.agents:
+                if agent.adversary:
+                    dis = 10
+                    rdm = np.random.random()*2*math.pi
+                    agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                    agent.state.p_vel = np.zeros(world.dim_p)
+                    agent.state.c = np.zeros(world.dim_c)
+                else:
+                    dis = 8
+                    rdm = np.random.random()*2*math.pi
+                    agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                    agent.state.p_vel = np.zeros(world.dim_p)
+                    agent.state.c = np.zeros(world.dim_c)
+        elif self.mode == 1: # for testing
+            for i, landmark in enumerate(world.landmarks):
+                landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
+                landmark.state.p_vel = np.zeros(world.dim_p)
+            for agent in world.agents:
+                if agent.adversary:
+                    dis = 8
+                    rdm = np.random.random()*2*math.pi
+                    agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                    agent.state.p_vel = np.zeros(world.dim_p)
+                    agent.state.c = np.zeros(world.dim_c)
+                else:
+                    dis = 5
+                    rdm = np.random.random()*2*math.pi
+                    agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                    agent.state.p_vel = np.zeros(world.dim_p)
+                    agent.state.c = np.zeros(world.dim_c)
+
 
     # def benchmark_data(self, agent, world):
     #     # returns data for benchmarking purposes
