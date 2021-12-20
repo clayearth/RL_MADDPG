@@ -43,11 +43,12 @@ def make_env(scenario_name, benchmark=False, discrete_action=False):
                             # scenario.observation, scenario.benchmark_data)
                             # TODO use "done" tag to control every episode break or not
                             scenario.observation, scenario.benchmark_data
-                            , done_callback = scenario.done)
-                            # , discrete_action = discrete_action)
+                            , done_callback = scenario.done, info_callback=scenario.info
+                            , discrete_action = discrete_action)
     else:
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward,
                             # scenario.observation)
-                            scenario.observation, done_callback = scenario.done)
-                            # , discrete_action = discrete_action)
+                            scenario.observation, done_callback = scenario.done,
+                            info_callback=scenario.info
+                            , discrete_action = discrete_action)
     return env
