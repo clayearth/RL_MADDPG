@@ -3,6 +3,9 @@ import torch
 import time
 import imageio
 import numpy as np
+import matplotlib.pyplot as plt
+import math
+from copy import deepcopy
 from pathlib import Path
 from torch.autograd import Variable
 from utils.make_env import make_env
@@ -32,6 +35,14 @@ def run(config):
     bad_hit = 0
     out_of_episode_length = 0
 
+    if config.n_episodes == 1:
+        e_pos = [[] for i in range(1)]
+        p_pos = [[] for i in range(2)]
+        e_vel = [[] for i in range(1)]
+        p_vel = [[] for i in range(2)]
+        e_reward = [[] for i in range(1)]
+        p_reward = [[] for i in range(2)]
+
     for ep_i in range(config.n_episodes):
         print("Episode %i of %i" % (ep_i + 1, config.n_episodes))
         obs = env.reset()
@@ -39,6 +50,7 @@ def run(config):
             frames = []
             frames.append(env.render('rgb_array')[0])
         env.render('human')
+
         for t_i in range(config.episode_length):
             calc_start = time.time()
             # rearrange observations to be per agent, and convert to torch Variable
@@ -47,9 +59,21 @@ def run(config):
                          for i in range(maddpg.nagents)]
             # get actions as torch Variables
             torch_actions = maddpg.step(torch_obs, explore=False)
+            # print(deepcopy(torch_actions))
             # convert actions to numpy arrays
             actions = [ac.data.numpy().flatten() for ac in torch_actions]
             obs, rewards, dones, infos = env.step(actions)
+
+            if config.n_episodes == 1:
+                for i in range(infos["n_adv"]):
+                    e_pos[i].append(deepcopy(infos["adversary"][0][i]))
+                    e_vel[i].append(deepcopy(infos["adversary"][1][i]))
+                    e_reward[i].append(deepcopy(infos["adversary"][2][i]))
+                for i in range(infos["n_good"]):
+                    p_pos[i].append(deepcopy(infos["goodagent"][0][i]))
+                    p_vel[i].append(deepcopy(infos["goodagent"][1][i]))
+                    p_reward[i].append(deepcopy(infos["goodagent"][2][i]))
+
             if config.save_gifs:
                 frames.append(env.render('rgb_array')[0])
             calc_end = time.time()
@@ -79,7 +103,87 @@ def run(config):
     print("-------------------------------------------------------------------")
     print("Episodes: %d, good hit: %d, bad hit: %d, good hit percent: %.2f"
           %(config.n_episodes, good_hit, bad_hit, good_hit*1.0/config.n_episodes))
+
+    # from msvcrt import getch
+    # getch()
+
+    # if config.n_episodes == 1:
+    #     plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward)
+
     env.close()
+
+def plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward):
+    e_pos_arr = np.array(e_pos)
+    p_pos_arr = np.array(p_pos)
+    e_vel_arr = np.array(e_vel)
+    p_vel_arr = np.array(p_vel)
+    e_reward_arr = np.array(e_reward)
+    p_reward_arr = np.array(p_reward)
+
+    # i is e_nums; j is p_nums
+    dis_arr = np.array([[[np.sqrt(np.sum(np.square(p_pos_arr[j][k] - e_pos_arr[i][k])))
+                          for k in range(len(e_pos_arr[0]))]
+                         for j in range(2)]
+                        for i in range(1)])
+
+    dis_theta_arr = np.array([[[math.atan2((e_pos_arr[i][k] - p_pos_arr[j][k])[1],
+                                           (e_pos_arr[i][k] - p_pos_arr[j][k])[0]) * 180/math.pi
+                                for k in range(len(e_pos_arr[0]))]
+                               for j in range(2)]
+                              for i in range(1)])
+
+    lips = len(e_pos_arr[0])
+    step_list = list(range(lips))
+
+    plt.figure(1) # draw move trace
+    for i in range(1): # plot pos of e
+        plt.plot(e_pos_arr[i][0:lips,0],e_pos_arr[i][0:lips,1],label=('e_'+str(i)))
+    for i in range(2): # plot pos of p
+        plt.plot(p_pos_arr[i][0:lips,0],p_pos_arr[i][0:lips,1],label=('p_'+str(i)))
+    plt.legend()
+    plt.xlabel('x')
+    plt.ylabel('y')
+    # plt.legend(['p','e'])
+
+    plt.figure(2) # draw distance between e & p
+    for i in range(1):
+        for j in range(2):
+            plt.plot(step_list, dis_arr[i][j],label=("p"+str(j)+"_e"+str(i)))
+    # plt.plot(step_list,state_array[0:len(step_list),0])
+    plt.legend()
+    plt.xlabel('step')
+    plt.ylabel('dis')
+
+    plt.figure(3) # draw thetas
+    line_shape = ['-','--','-.']
+    for i in range(1):
+        # plt.plot(step_list, np.array([math.atan2(e_vel_arr[i][m][1],e_vel_arr[i][m][0])*180/math.pi for m in step_list]), ls='-', label=("e"+str(i)+"-vel-theta"))
+        for j in range(2):
+            if i==0:
+                plt.plot(step_list, np.array([math.atan2(p_vel_arr[j][m][1],p_vel_arr[j][m][0])*180/math.pi for m in step_list]), ls = line_shape[j], label=("p"+str(j)+"-vel-theta"))
+            plt.plot(step_list, dis_theta_arr[i][j], ls = line_shape[j], label=("p"+str(j)+"_e"+str(i)+"_dis_theta"))
+    plt.legend()
+    plt.xlabel('step')
+    plt.ylabel('theta')
+
+    plt.figure(4) # darw v of e & p
+    for i in range(1): # plot vel of e
+        plt.plot(step_list, np.array([np.sqrt(np.sum(np.square(e_vel_arr[i][m]))) for m in step_list]), label=('v_e_'+str(i)))
+    for i in range(2): # plot vel of p
+        plt.plot(step_list, np.array([np.sqrt(np.sum(np.square(p_vel_arr[i][m]))) for m in step_list]), label=('v_p_'+str(i)))
+    plt.legend()
+    plt.xlabel('step')
+    plt.ylabel('v')
+
+    plt.figure(5)
+    for i in range(1): # plot reward of e
+        plt.plot(step_list[0:lips-1], np.array([e_reward_arr[i][m] for m in step_list][0:lips-1]), label=('reward_e_'+str(i)))
+    for i in range(2): # plot reward of p
+        plt.plot(step_list[0:lips-1], np.array([p_reward_arr[i][m] for m in step_list][0:lips-1]), label=('reward_p_'+str(i)))
+    plt.legend()
+    plt.xlabel('step')
+    plt.ylabel('reward')
+    plt.show()
 
 
 if __name__ == '__main__':
