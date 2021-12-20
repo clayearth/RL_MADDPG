@@ -67,13 +67,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 8
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 8
+                    dis =20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -84,13 +84,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
