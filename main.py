@@ -55,6 +55,7 @@ def run(config):
         torch.set_num_threads(config.n_training_threads)
 
     # 生成并行训练环境
+    print(config.discrete_action)
     env = make_parallel_env(config.env_id, config.n_rollout_threads, config.seed,
                             config.discrete_action)
     # MADDPG模型
