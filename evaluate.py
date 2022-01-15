@@ -13,6 +13,7 @@ from algorithms.maddpg import MADDPG
 
 
 def run(config):
+    global torch_actions
     model_path = (Path('./models') / config.env_id / config.model_name /
                   ('run%i' % config.run_num))
     if config.incremental is not None:
@@ -58,8 +59,8 @@ def run(config):
                                   requires_grad=False)
                          for i in range(maddpg.nagents)]
             # get actions as torch Variables
-            torch_actions = maddpg.step(torch_obs, explore=False)
-            # print(deepcopy(torch_actions))
+            if t_i%8 == 0:
+                torch_actions = maddpg.step(torch_obs, explore=False)
             # convert actions to numpy arrays
             actions = [ac.data.numpy().flatten() for ac in torch_actions]
             obs, rewards, dones, infos = env.step(actions)
@@ -107,8 +108,8 @@ def run(config):
     # from msvcrt import getch
     # getch()
 
-    # if config.n_episodes == 1:
-    #     plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward)
+    if config.n_episodes == 1:
+        plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward)
 
     env.close()
 
@@ -198,8 +199,8 @@ if __name__ == '__main__':
                         help="Load incremental policy from given episode " +
                              "rather than final policy") # 如果采用某一次中间策略而不是最终策略
     parser.add_argument("--n_episodes", default=1, type=int) # 测试轮数
-    parser.add_argument("--episode_length", default=100, type=int) #每轮测试步长
-    parser.add_argument("--fps", default=30, type=int) # 帧数
+    parser.add_argument("--episode_length", default=500, type=int) #每轮测试步长
+    parser.add_argument("--fps", default=60, type=int) # 帧数
 
     config = parser.parse_args()
 

@@ -30,6 +30,7 @@ def make_parallel_env(env_id, n_rollout_threads, seed, discrete_action):
         return SubprocVecEnv([get_env_fn(i) for i in range(n_rollout_threads)]) #返回多个环境
 
 def run(config):
+    global torch_agent_actions
     model_dir = Path('./models') / config.env_id / config.model_name #模型地址
     if not model_dir.exists(): #模型不存在则自动生成‘run1’
         curr_run = 'run1'
@@ -95,7 +96,9 @@ def run(config):
                                   requires_grad=False)
                          for i in range(maddpg.nagents)]
             # get actions as torch Variables
+            # 对每个智能体a，返回Tensor[a_x∈[-1,1],a_y∈[-1,1]]
             torch_agent_actions = maddpg.step(torch_obs, explore=True)
+            # print(torch_agent_actions)
             # convert actions to numpy arrays
             agent_actions = [ac.data.numpy() for ac in torch_agent_actions]
             # rearrange actions to be per environment
@@ -149,7 +152,7 @@ def run(config):
 
 
 if __name__ == '__main__':
-    EPOSODE = 150000
+    EPOSODE = 200000
     parser = argparse.ArgumentParser()
     parser.add_argument("env_id", help="Name of environment") # Name of environment
     parser.add_argument("model_name",
@@ -158,23 +161,23 @@ if __name__ == '__main__':
     parser.add_argument("--seed",
                         default=1, type=int,
                         help="Random seed") # 随机种子
-    parser.add_argument("--n_rollout_threads", default=20, type=int) # 并行训练环境数 1
+    parser.add_argument("--n_rollout_threads", default=16, type=int) # 并行训练环境数 1
     parser.add_argument("--n_training_threads", default=24, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(1*1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
     parser.add_argument("--episode_length", default=50, type=int) # 单次训练数据组数 25
-    parser.add_argument("--steps_per_update", default=800, type=int) # 每组训练步长 100
+    parser.add_argument("--steps_per_update", default=1600, type=int) # 每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
                         default=4096, type=int,
                         help="Batch size for model training")
     # 探索量，计算探索度=max(0,n_exploration_eps-now_episodes)/n_exploration_eps，随着训练从1线性减小至0，初始25000
     parser.add_argument("--n_exploration_eps", default=EPOSODE, type=int)
-    parser.add_argument("--init_noise_scale", default=0.5, type=float) # 初始化噪声量度,默认为0.3
+    parser.add_argument("--init_noise_scale", default=0.3, type=float) # 初始化噪声量度,默认为0.3
     parser.add_argument("--final_noise_scale", default=0.0, type=float) # 最后噪声量度，二者与探索度一起决定最终噪声量
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
     parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目
-    parser.add_argument("--lr", default=0.01, type=float) #0.01
-    parser.add_argument("--tau", default=0.01, type=float)
+    parser.add_argument("--lr", default=0.01, type=float) # 学习率0.01
+    parser.add_argument("--tau", default=0.0025, type=float)
     parser.add_argument("--agent_alg", # 智能体算法
                         default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'])
