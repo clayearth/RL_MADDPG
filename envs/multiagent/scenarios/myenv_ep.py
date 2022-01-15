@@ -6,7 +6,7 @@ from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
     def __init__(self):
-        self.hit_radius = 0.3
+        self.hit_radius = 3
         self.mode = 0 # 0->"train"; 1->"evaluate for one esposide"
     def make_world(self):
         world = World()
@@ -24,18 +24,18 @@ class Scenario(BaseScenario):
             agent.silent = True
             agent.adversary = True if i < num_adversaries else False
             # agent.size = 0.04
-            agent.size = 0.3 if agent.adversary else 0.3 # 0.5; 0.4
+            agent.size = 3 if agent.adversary else 3 # 0.5; 0.4
             # agent.accel = 4.0 if agent.adversary else 3.0
             # TODO anget sensitivity, turning theta
             # agent.accel = math.pi/6 if agent.adversary else math.pi/6
-            agent.max_speed = 3.0 if agent.adversary else 5.0
+            agent.max_speed = 5.0 if agent.adversary else 5.0
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
             landmark.name = 'landmark %d' % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = 0.5 # 0.6
+            landmark.size = 5 # 0.6
         # make initial conditions
         self.reset_world(world)
         return world
@@ -68,13 +68,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 2.5
+                    dis = 50
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2.5
+                    dis = 50
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -85,13 +85,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 2.5
+                    dis = 50
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2.5
+                    dis = 50
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -137,7 +137,9 @@ class Scenario(BaseScenario):
         # Agents are rewarded based on minimum agent distance to each landmark
         return self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
 
-    def agent_reward(self, agent, world):
+    def agent_reward(self, agent, world, mode = None):
+        if mode is None:
+            mode = self.mode
         # Rewarded based on how close any good agent is to the goal landmark, and how far the adversary is from it
         shaped_reward = True
         shaped_adv_reward = True
@@ -178,11 +180,13 @@ class Scenario(BaseScenario):
         #         [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
         # return pos_rew + adv_rew
 
-        if self.mode:
+        if mode:
             print("\treward:\t" + str(adv_rew + hit_rew))
         return adv_rew + hit_rew - 5
 
-    def adversary_reward(self, agent, world):
+    def adversary_reward(self, agent, world, mode = None):
+        if mode is None:
+            mode = self.mode
         # TODO solve why adversary don't move
         # Rewarded based on proximity to the goal landmark
         shaped_reward = True
@@ -196,7 +200,7 @@ class Scenario(BaseScenario):
             #         if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # be hitten big bad reward
             #             hit_rew -= 10000
             #             break
-            if self.mode:
+            if mode:
                 print("\treward:\t" + str(dis_reward + hit_rew))
             return dis_reward + hit_rew - 5
 
@@ -235,20 +239,23 @@ class Scenario(BaseScenario):
             return np.concatenate([agent.state.p_vel] + entity_pos + other_pos)
 
     def info(self, agent, world):
-        # get all info by per step
-        infos = {}
-        infos["n_adv"] = len(self.adversaries(world))
-        infos["n_good"] = world.num_agents - len(self.adversaries(world))
-        infos["adversary"] = [[] for i in range(3)] # 位置、速度、奖励
-        infos["goodagent"] = [[] for i in range(3)]
-        for a in world.agents:
-            if a.adversary:
-                infos["adversary"][0].append(a.state.p_pos)
-                infos["adversary"][1].append(a.state.p_vel)
-                infos["adversary"][2].append(self.adversary_reward(a,world))
-            else:
-                infos["goodagent"][0].append(a.state.p_pos)
-                infos["goodagent"][1].append(a.state.p_vel)
-                infos["goodagent"][2].append(self.agent_reward(a,world))
-        # print(infos)
+        if self.mode:
+            # get all info by per step
+            infos = {}
+            infos["n_adv"] = len(self.adversaries(world))
+            infos["n_good"] = world.num_agents - len(self.adversaries(world))
+            infos["adversary"] = [[] for i in range(3)] # 位置、速度、奖励
+            infos["goodagent"] = [[] for i in range(3)]
+            for a in world.agents:
+                if a.adversary:
+                    infos["adversary"][0].append(a.state.p_pos)
+                    infos["adversary"][1].append(a.state.p_vel)
+                    infos["adversary"][2].append(self.adversary_reward(a,world,mode=0))
+                else:
+                    infos["goodagent"][0].append(a.state.p_pos)
+                    infos["goodagent"][1].append(a.state.p_vel)
+                    infos["goodagent"][2].append(self.agent_reward(a,world,mode=0))
+            # print(infos)
+        else:
+            infos = None
         return infos

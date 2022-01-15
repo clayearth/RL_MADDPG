@@ -38,7 +38,7 @@ class DDPGAgent(object):
         self.critic_optimizer = Adam(self.critic.parameters(), lr=lr)
         if not discrete_action:
             # TODO change the singma of OU_Noise
-            self.exploration = OUNoise(num_out_pol,sigma=0.2)
+            self.exploration = OUNoise(num_out_pol,sigma=1)
         else:
             self.exploration = 0.3  # epsilon for eps-greedy
         self.discrete_action = discrete_action
@@ -69,13 +69,15 @@ class DDPGAgent(object):
             else:
                 action = onehot_from_logits(action)
         else:  # continuous action
-            print(action)
+            # print(action)
             if explore:
                 action += Variable(Tensor(self.exploration.noise()),
                                    requires_grad=False)
             # 对每个智能体a，返回Tensor[a_x∈[-1,1],a_y∈[-1,1]]
-            print(action)
+            # print(action)
             action = action.clamp(-1, 1)
+            # print(action)
+            # print("--------------------------")
         return action
 
     def get_params(self):

@@ -91,6 +91,7 @@ def run(config):
         maddpg.reset_noise()
 
         for et_i in range(config.episode_length):
+            calc_start = time.time()
             # rearrange observations to be per agent, and convert to torch Variable
             torch_obs = [Variable(torch.Tensor(np.vstack(obs[:, i])),
                                   requires_grad=False)
@@ -105,6 +106,13 @@ def run(config):
             actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
 
             next_obs, rewards, dones, infos = env.step(actions)
+
+            # ifi = 1 / 30  # inter-frame interval
+            # calc_end = time.time()
+            # elapsed = calc_end - calc_start
+            # if elapsed < ifi:
+            #     time.sleep(ifi - elapsed)
+            # env.envs[0].render('human')
 
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones) # 缓冲区
             obs = next_obs # 更新obs
@@ -152,7 +160,7 @@ def run(config):
 
 
 if __name__ == '__main__':
-    EPOSODE = 200000
+    EPOSODE = 50000
     parser = argparse.ArgumentParser()
     parser.add_argument("env_id", help="Name of environment") # Name of environment
     parser.add_argument("model_name",
@@ -161,12 +169,12 @@ if __name__ == '__main__':
     parser.add_argument("--seed",
                         default=1, type=int,
                         help="Random seed") # 随机种子
-    parser.add_argument("--n_rollout_threads", default=16, type=int) # 并行训练环境数 1
-    parser.add_argument("--n_training_threads", default=24, type=int) # CPU线程数 6
+    parser.add_argument("--n_rollout_threads", default=18, type=int) # 并行训练环境数 1
+    parser.add_argument("--n_training_threads", default=20, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(1*1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
-    parser.add_argument("--episode_length", default=50, type=int) # 单次训练数据组数 25
-    parser.add_argument("--steps_per_update", default=1600, type=int) # 每组训练步长 100
+    parser.add_argument("--episode_length", default=1200, type=int) # 单次训练数据组数 25
+    parser.add_argument("--steps_per_update", default=500, type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
                         default=4096, type=int,
                         help="Batch size for model training")
@@ -177,7 +185,7 @@ if __name__ == '__main__':
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
     parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目
     parser.add_argument("--lr", default=0.01, type=float) # 学习率0.01
-    parser.add_argument("--tau", default=0.0025, type=float)
+    parser.add_argument("--tau", default=0.02, type=float)
     parser.add_argument("--agent_alg", # 智能体算法
                         default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'])
