@@ -26,8 +26,7 @@ class Scenario(BaseScenario):
             # agent.size = 0.04
             agent.size = 0.3 if agent.adversary else 0.3 # 0.5; 0.4
             # agent.accel = 4.0 if agent.adversary else 3.0
-            # TODO anget sensitivity, turning theta
-            # agent.accel = math.pi/6 if agent.adversary else math.pi/6
+            agent.accel = 25.0 if agent.adversary else 20.0
             agent.max_speed = 3.0 if agent.adversary else 5.0
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
@@ -35,7 +34,7 @@ class Scenario(BaseScenario):
             landmark.name = 'landmark %d' % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = 0.5 # 0.6
+            landmark.size = 0.4 # 0.6
         # make initial conditions
         self.reset_world(world)
         return world
@@ -68,13 +67,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 2.5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2.5
+                    dis =20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -85,13 +84,13 @@ class Scenario(BaseScenario):
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 2.5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2.5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -229,10 +228,9 @@ class Scenario(BaseScenario):
 
         if not agent.adversary: # 如果是追击者
             # return np.concatenate([agent.goal_a.state.p_pos - agent.state.p_pos] + entity_pos + other_pos)
-            return np.concatenate([agent.state.p_vel] + entity_pos + other_pos)
+            return np.concatenate([a.state.p_pos - agent.state.p_pos for a in self.adversaries(world)] + entity_pos + other_pos)
         else: # 如果是逃逸者
-            # print(np.concatenate(entity_pos + other_pos))
-            return np.concatenate([agent.state.p_vel] + entity_pos + other_pos)
+            return np.concatenate(entity_pos + other_pos)
 
     def info(self, agent, world):
         # get all info by per step

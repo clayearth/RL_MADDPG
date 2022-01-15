@@ -29,7 +29,7 @@ class MultiAgentEnv(gym.Env):
         # environment parameters
         self.discrete_action_space = discrete_action #True
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
-        self.discrete_action_input = False
+        self.discrete_action_input = discrete_action #False
         # if true, even the action is continuous, action will be performed discretely
         self.force_discrete_action = world.discrete_action if hasattr(world, 'discrete_action') else False
         # if true, every agent has the same reward
@@ -173,18 +173,26 @@ class MultiAgentEnv(gym.Env):
                     d = np.argmax(action[0])
                     action[0][:] = 0.0
                     action[0][d] = 1.0
-                if self.discrete_action_space: #
+                if self.discrete_action_space:
                     agent.action.u[0] += action[0][1] - action[0][2]
                     agent.action.u[1] += action[0][3] - action[0][4]
                 else:
                     agent.action.u = action[0]
-            # TODO accel 默认为5.0，但是否应考虑转向角度范围的问题？
-            sensitivity = 5.0
-            if agent.accel is not None:
-                sensitivity = agent.accel
-            agent.action.u *= sensitivity
-            action = action[1:]
+
+                    # TODO 应考虑转向角度范围的问题, 目前表征转向角
+                    # sensitivity =  math.pi/6 # 5.0
+                    # if agent.accel is not None:
+                    #     sensitivity = agent.accel
+                    # agent.action.u[1] *= sensitivity
+                    action = action[1:]
+
+            # sensitivity =  math.pi/6 # 5.0
+            # if agent.accel is not None:
+            #     sensitivity = agent.accel
+            # agent.action.u *= sensitivity
+            # action = action[1:]
             # print(deepcopy(agent.action.u))
+            
         if not agent.silent:
             # communication action
             if self.discrete_action_input:
@@ -254,7 +262,7 @@ class MultiAgentEnv(gym.Env):
             from multiagent import rendering
             # update bounds to center around agent
             # TODO cam_range decide windows' size
-            cam_range = 15
+            cam_range = 10
             if self.shared_viewer:
                 pos = np.zeros(self.world.dim_p)
             else:

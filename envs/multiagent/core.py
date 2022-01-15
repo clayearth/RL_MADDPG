@@ -1,3 +1,6 @@
+import cmath
+import math
+
 import numpy as np
 
 # physical/external base state of all entites
@@ -77,6 +80,8 @@ class Agent(Entity):
         self.action = Action()
         # script behavior to execute
         self.action_callback = None
+        # adversary
+        self.adversary = False
 
 # multi-agent world
 class World(object):
@@ -91,9 +96,9 @@ class World(object):
         # color dimensionality
         self.dim_color = 3
         # simulation timestep
-        self.dt = 0.1
+        self.dt = 0.0025
         # physical damping
-        self.damping = 0.25
+        self.damping = 0 # 0.25
         # contact response parameters
         self.contact_force = 1e+2
         self.contact_margin = 1e-3
@@ -160,7 +165,16 @@ class World(object):
             if not entity.movable: continue
             entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
             if (p_force[i] is not None):
-                entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
+                #TODO entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
+                # print(p_force[i])
+                v1 = (p_force[i][0] + 1) * 1.5 if entity.adversary else (p_force[i][0] + 1) * 2.5
+                omega = p_force[i][1] * math.pi/6
+                last_theta = math.atan2(entity.state.p_vel[1],entity.state.p_vel[0])
+                # print(entity.state.p_vel)
+                # print(v1,omega,last_theta)
+                # print("------------------")
+                entity.state.p_vel =  (entity.state.p_vel / 9) * 8 + (v1 * math.cos(last_theta + omega*self.dt),
+                                                                  v1 * math.sin(last_theta + omega*self.dt)/9)
             if entity.max_speed is not None:
                 speed = np.sqrt(np.square(entity.state.p_vel[0]) + np.square(entity.state.p_vel[1]))
                 if speed > entity.max_speed:
