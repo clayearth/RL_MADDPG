@@ -49,6 +49,9 @@ class Entity(object):
         # mass
         self.initial_mass = 1.0
 
+        # palstance
+        self.palstance = None
+
     @property
     def mass(self):
         return self.initial_mass
@@ -171,24 +174,26 @@ class World(object):
                 entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
                 if (p_force[i] is not None):
                     #TODO entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
-                    v1 = (p_force[i][0] + 1) * entity.max_speed/2
-                    omega = p_force[i][1] * math.pi/6
-                    last_theta = entity.state.p_vel[1]
-                    # print('p_force[i]:',p_force[i])
-                    # print('v1:',v1)
-                    # print('omega:',omega)
-                    # print("last_theta",last_theta)
-                    # print("theta:",last_theta + omega*self.dt)
-                    # print('entity.state.p_vel:',entity.state.p_vel)
-                    # print("------------------")
-                    entity.state.p_vel =  (entity.state.p_vel / 9) * 8 + (v1 * math.cos(last_theta + omega*self.dt)/9,
-                                                                      v1 * math.sin(last_theta + omega*self.dt)/9)
+                    v_uc = (p_force[i][0] + 1) * entity.max_speed/2
+                    entity.state.p_vel[0] = (entity.state.p_vel[0] / 9) * 8 + v_uc/9
+                    omega_uc = p_force[i][1] * math.pi/6
+                    entity.palstance = entity.palstance*8/9 + omega_uc
+                    entity.state.p_vel[1] = entity.state.p_vel[1] + entity.palstance*self.dt
+                    # if control_term==0:
+                    #     print('p_force[i]:',p_force[i])
+                    #     print('v1:',v1)
+                    #     print('omega:',omega)
+                    #     print('entity.state.p_vel:',entity.state.p_vel)
+                    #     print("------------------")
                 if entity.max_speed is not None:
-                    speed = np.sqrt(np.square(entity.state.p_vel[0]) + np.square(entity.state.p_vel[1]))
-                    if speed > entity.max_speed:
-                        entity.state.p_vel = entity.state.p_vel / np.sqrt(np.square(entity.state.p_vel[0]) +
-                                                                      np.square(entity.state.p_vel[1])) * entity.max_speed
-                entity.state.p_pos += entity.state.p_vel * self.dt
+                    # speed = np.sqrt(np.square(entity.state.p_vel[0]) + np.square(entity.state.p_vel[1]))
+                    # if speed > entity.max_speed:
+                    #     entity.state.p_vel = entity.state.p_vel / np.sqrt(np.square(entity.state.p_vel[0]) +
+                    #                                                   np.square(entity.state.p_vel[1])) * entity.max_speed
+                    if abs(entity.state.p_vel[0]) > entity.max_speed:
+                        entity.state.p_vel[0] = entity.state.p_vel[0]/abs(entity.state.p_vel[0])*entity.max_speed
+                entity.state.p_pos[0] += entity.state.p_vel[0]*math.cos(entity.state.p_vel[1]) * self.dt
+                entity.state.p_pos[1] += entity.state.p_vel[0]*math.sin(entity.state.p_vel[1]) * self.dt
                 # print("entity.state.p_pos",entity.state.p_pos)
                 # print("entity.state.p_vel",entity.state.p_vel)
 
