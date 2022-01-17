@@ -6,7 +6,7 @@ from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
     def __init__(self):
-        self.hit_radius = 3
+        self.hit_radius = 0.5
         self.mode = 0 # 0->"train"; 1->"evaluate for one esposide"
     def make_world(self):
         world = World()
@@ -24,7 +24,7 @@ class Scenario(BaseScenario):
             agent.silent = True
             agent.adversary = True if i < num_adversaries else False
             # agent.size = 0.04
-            agent.size = 3 if agent.adversary else 3 # 0.5; 0.4
+            agent.size = 0.5 if agent.adversary else 0.5 # 0.5; 0.4
             # agent.accel = 4.0 if agent.adversary else 3.0
             # TODO anget sensitivity, turning theta
             # agent.accel = math.pi/6 if agent.adversary else math.pi/6
@@ -35,7 +35,7 @@ class Scenario(BaseScenario):
             landmark.name = 'landmark %d' % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = 5 # 0.6
+            landmark.size = 0.6 # 0.6
         # make initial conditions
         self.reset_world(world)
         return world
@@ -67,31 +67,33 @@ class Scenario(BaseScenario):
                 landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
-                if agent.adversary:
-                    dis = 50
-                    rdm = np.random.random()*2*math.pi
-                    agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
-                    agent.state.p_vel = np.zeros(world.dim_p)
-                    agent.state.c = np.zeros(world.dim_c)
-                else:
-                    dis = 50
-                    rdm = np.random.random()*2*math.pi
-                    agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
-                    agent.state.p_vel = np.zeros(world.dim_p)
-                    agent.state.c = np.zeros(world.dim_c)
+                agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
+                agent.state.p_vel = np.zeros(world.dim_p)
+                # if agent.adversary:
+                #     dis = 10
+                #     rdm = np.random.random()*2*math.pi
+                #     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                #     agent.state.p_vel = np.zeros(world.dim_p)
+                #     agent.state.c = np.zeros(world.dim_c)
+                # else:
+                #     dis = 10
+                #     rdm = np.random.random()*2*math.pi
+                #     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
+                #     agent.state.p_vel = np.zeros(world.dim_p)
+                #     agent.state.c = np.zeros(world.dim_c)
         elif self.mode == 1: # for testing
             for i, landmark in enumerate(world.landmarks):
                 landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
                 if agent.adversary:
-                    dis = 50
+                    dis = 10
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 50
+                    dis = 10
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -150,8 +152,8 @@ class Scenario(BaseScenario):
             adv_rew = 0
             hit_rew = 0
             for a in adversary_agents:
-                adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
-                adv_rew -= 1.5*np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
+                # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
+                adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
                 # if np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) < self.hit_radius(): # protection was hit: big bad reward
                 #     hit_rew -= 10000
                 # elif np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius(): # big reward for hit

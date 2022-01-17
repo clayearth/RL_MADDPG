@@ -171,17 +171,15 @@ class World(object):
                 entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
                 if (p_force[i] is not None):
                     #TODO entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
-                    # print(p_force[i])
-                    v1 = (p_force[i][0] + 1) * 1.5 if entity.adversary else (p_force[i][0] + 1) * 2.5
+                    v1 = (p_force[i][0] + 1) * entity.max_speed/2
                     omega = p_force[i][1] * math.pi/6
+                    last_theta = entity.state.p_vel[1]
                     # print('p_force[i]:',p_force[i])
                     # print('v1:',v1)
                     # print('omega:',omega)
-                    last_theta = entity.state.p_vel[1]
                     # print("last_theta",last_theta)
                     # print("theta:",last_theta + omega*self.dt)
-                    # print(entity.state.p_vel)
-                    # print(v1,omega,last_theta)
+                    # print('entity.state.p_vel:',entity.state.p_vel)
                     # print("------------------")
                     entity.state.p_vel =  (entity.state.p_vel / 9) * 8 + (v1 * math.cos(last_theta + omega*self.dt)/9,
                                                                       v1 * math.sin(last_theta + omega*self.dt)/9)

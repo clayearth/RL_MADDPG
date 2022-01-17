@@ -2,6 +2,7 @@ import argparse
 import torch
 import time
 import os
+import imageio
 import numpy as np
 from gym.spaces import Box, Discrete
 from pathlib import Path
@@ -107,12 +108,12 @@ def run(config):
 
             next_obs, rewards, dones, infos = env.step(actions)
 
-            # ifi = 1 / 30  # inter-frame interval
-            # calc_end = time.time()
-            # elapsed = calc_end - calc_start
-            # if elapsed < ifi:
-            #     time.sleep(ifi - elapsed)
-            # env.envs[0].render('human')
+            ifi = 1 / 60  # inter-frame interval
+            calc_end = time.time()
+            elapsed = calc_end - calc_start
+            if elapsed < ifi:
+                time.sleep(ifi - elapsed)
+            env.envs[0].render('human')
 
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones) # 缓冲区
             obs = next_obs # 更新obs
@@ -169,11 +170,11 @@ if __name__ == '__main__':
     parser.add_argument("--seed",
                         default=1, type=int,
                         help="Random seed") # 随机种子
-    parser.add_argument("--n_rollout_threads", default=18, type=int) # 并行训练环境数 1
-    parser.add_argument("--n_training_threads", default=20, type=int) # CPU线程数 6
+    parser.add_argument("--n_rollout_threads", default=1, type=int) # 并行训练环境数 1
+    parser.add_argument("--n_training_threads", default=12, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(1*1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
-    parser.add_argument("--episode_length", default=1200, type=int) # 单次训练数据组数 25
+    parser.add_argument("--episode_length", default=200, type=int) # 单次训练数据组数 25
     parser.add_argument("--steps_per_update", default=500, type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
                         default=4096, type=int,
