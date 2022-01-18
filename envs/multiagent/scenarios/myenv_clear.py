@@ -23,11 +23,9 @@ class Scenario(BaseScenario):
             agent.collide = False
             agent.silent = True
             agent.adversary = True if i < num_adversaries else False
-            # agent.size = 0.04
             agent.size = 0.5 if agent.adversary else 0.5 # 0.5; 0.4
             # agent.accel = 4.0 if agent.adversary else 3.0
             # TODO anget sensitivity, turning theta
-            # agent.accel = math.pi/6 if agent.adversary else math.pi/6
             agent.max_speed = 5.0 if agent.adversary else 5.0
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
@@ -56,13 +54,6 @@ class Scenario(BaseScenario):
             agent.goal_a = goal
         # set random initial states
         if self.mode == 0: # for training
-            # for agent in world.agents:
-            #     agent.state.p_pos = np.random.uniform(-15, +15, world.dim_p)
-            #     agent.state.p_vel = np.zeros(world.dim_p)
-            #     agent.state.c = np.zeros(world.dim_c)
-            # for i, landmark in enumerate(world.landmarks):
-            #     landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
-            #     landmark.state.p_vel = np.zeros(world.dim_p)
             for i, landmark in enumerate(world.landmarks):
                 landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
@@ -71,7 +62,7 @@ class Scenario(BaseScenario):
                 agent.palstance = np.zeros(1)
                 if agent.adversary:
                     agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
-                    pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
+                    pos_dif = agent.goal_a.state.p_pos - agent.state.p_pos
                     agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
                     # print(agent.state.p_vel[1]*180/math.pi)
                 else:
@@ -80,7 +71,7 @@ class Scenario(BaseScenario):
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
                     rdm_adversary = np.random.choice(self.adversaries(world))
-                    pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
+                    pos_dif = rdm_adversary.state.p_pos - agent.state.p_pos
                     agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
                     # print(agent.state.p_vel[1]*180/math.pi)
 
@@ -105,20 +96,6 @@ class Scenario(BaseScenario):
                     rdm_adversary = np.random.choice(self.adversaries(world))
                     pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
                     agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
-
-    # def benchmark_data(self, agent, world):
-    #     # returns data for benchmarking purposes
-    #     if agent.adversary:
-    #         return np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))
-    #     else:
-    #         # TODO 修改benchmark
-    #         dists = []
-    #         # for l in world.landmarks:
-    #         #     dists.append(np.sum(np.square(agent.state.p_pos - l.state.p_pos)))
-    #         adversary_agents = self.adversaries(world)
-    #         for a in adversary_agents:
-    #             dists.append(np.sum(np.square(agent.state.p_pos - a.state.p_pos)))
-    #         return tuple(dists)
 
     # return every state of agents' dones
     def done(self, agent, world):
@@ -179,27 +156,6 @@ class Scenario(BaseScenario):
                 if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
                     hit_rew += 50000
 
-        # else:  # proximity-based adversary reward (binary)
-        #     adv_rew = 0
-        #     for a in adversary_agents:
-        #         if np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) < 2 * a.goal_a.size:
-        #             adv_rew -= 5
-
-        # # Calculate positive reward for agents
-        # good_agents = self.good_agents(world)
-        # if shaped_reward:  # distance-based agent reward
-        #     pos_rew = 0
-        #     # pos_rew = -min(
-        #     #     [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
-        # else:  # proximity-based agent reward (binary)
-        #     pos_rew = 0
-        #     if min([np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents]) \
-        #             < 2 * agent.goal_a.size:
-        #         pos_rew += 5
-        #     pos_rew -= min(
-        #         [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
-        # return pos_rew + adv_rew
-
         if mode:
             print("\treward:\t" + str(adv_rew + hit_rew))
         return adv_rew + hit_rew - 5
@@ -223,13 +179,6 @@ class Scenario(BaseScenario):
             if mode:
                 print("\treward:\t" + str(dis_reward + hit_rew))
             return dis_reward + hit_rew - 5
-
-
-        # else:  # proximity-based reward (binary)
-        #     adv_rew = 0
-        #     if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) < 2 * agent.goal_a.size:
-        #         adv_rew += 5
-        #     return adv_rew
 
     def observation(self, agent, world):
         # get positions of all entities in this agent's reference frame

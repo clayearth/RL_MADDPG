@@ -177,7 +177,7 @@ class World(object):
                     v_uc = (p_force[i][0] + 1) * entity.max_speed/2
                     entity.state.p_vel[0] = (entity.state.p_vel[0] / 9) * 8 + v_uc/9
                     omega_uc = p_force[i][1] * math.pi/6
-                    entity.palstance = entity.palstance*8/9 + omega_uc
+                    entity.palstance = entity.palstance*8/9 + omega_uc/9
                     entity.state.p_vel[1] = entity.state.p_vel[1] + entity.palstance*self.dt
                     # if control_term==0:
                     #     print('p_force[i]:',p_force[i])
