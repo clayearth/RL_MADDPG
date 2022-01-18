@@ -71,7 +71,6 @@ class Scenario(BaseScenario):
                 agent.palstance = np.zeros(1)
                 if agent.adversary:
                     agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
-
                     pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
                     agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
                     # print(agent.state.p_vel[1]*180/math.pi)
@@ -90,19 +89,22 @@ class Scenario(BaseScenario):
                 landmark.state.p_pos = np.random.uniform(-5, +5, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
             for agent in world.agents:
+                agent.state.p_vel = np.zeros(world.dim_p)
+                agent.palstance = np.zeros(1)
                 if agent.adversary:
-                    dis = 10
+                    dis = 5
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 10
+                    dis = 2
                     rdm = np.random.random()*2*math.pi
-                    agent.state.p_pos = self.adversaries(world)[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
-                    agent.state.p_vel = np.zeros(world.dim_p)
-                    agent.state.c = np.zeros(world.dim_c)
+                    agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
+                    rdm_adversary = np.random.choice(self.adversaries(world))
+                    pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
+                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
 
     # def benchmark_data(self, agent, world):
     #     # returns data for benchmarking purposes
