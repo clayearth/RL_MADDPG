@@ -198,7 +198,7 @@ if __name__ == '__main__':
                         help="Load incremental policy from given episode " +
                              "rather than final policy") # 如果采用某一次中间策略而不是最终策略
     parser.add_argument("--n_episodes", default=1, type=int) # 测试轮数
-    parser.add_argument("--episode_length", default=200, type=int) #每轮测试步长
+    parser.add_argument("--episode_length", default=600, type=int) #每轮测试步长
     parser.add_argument("--fps", default=60, type=int) # 帧数
 
     config = parser.parse_args()
