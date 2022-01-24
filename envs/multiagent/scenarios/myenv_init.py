@@ -145,15 +145,16 @@ class Scenario(BaseScenario):
         if shaped_adv_reward:  # distance-based adversary reward
             adv_rew = 0
             hit_rew = 0
-            for a in adversary_agents:
+            # for a in adversary_agents:
                 # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
-                adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
+                # adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
                 # if np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) < self.hit_radius(): # protection was hit: big bad reward
                 #     hit_rew -= 10000
                 # elif np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius(): # big reward for hit
                 #     hit_rew += 10000
                 # if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
                 #     hit_rew += 50000
+            adv_rew -= np.sqrt(np.sum(np.square(agent.goal_a.state.p_pos - agent.state.p_pos)))
         if mode:
             print("\treward:\t" + str(adv_rew + hit_rew))
         return adv_rew + hit_rew
