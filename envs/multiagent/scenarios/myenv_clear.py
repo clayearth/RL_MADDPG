@@ -76,7 +76,7 @@ class Scenario(BaseScenario):
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
-                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
+                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])+math.pi/6*np.random.normal(0,1)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
                     dis = 2
@@ -85,7 +85,7 @@ class Scenario(BaseScenario):
 
                     rdm_adversary = np.random.choice(self.adversaries(world))
                     pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
-                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])
+                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])+math.pi/6*np.random.normal(0,1)
                     # print(agent.state.p_vel[1]*180/math.pi)
 
         elif self.mode == 1: # for testing
@@ -176,37 +176,13 @@ class Scenario(BaseScenario):
             for a in adversary_agents:
                 # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
                 adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
-                # if np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) < self.hit_radius(): # protection was hit: big bad reward
-                #     hit_rew -= 10000
-                # elif np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius(): # big reward for hit
-                #     hit_rew += 10000
+
                 if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
                     hit_rew += 50000
 
-        # else:  # proximity-based adversary reward (binary)
-        #     adv_rew = 0
-        #     for a in adversary_agents:
-        #         if np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) < 2 * a.goal_a.size:
-        #             adv_rew -= 5
-
-        # # Calculate positive reward for agents
-        # good_agents = self.good_agents(world)
-        # if shaped_reward:  # distance-based agent reward
-        #     pos_rew = 0
-        #     # pos_rew = -min(
-        #     #     [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
-        # else:  # proximity-based agent reward (binary)
-        #     pos_rew = 0
-        #     if min([np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents]) \
-        #             < 2 * agent.goal_a.size:
-        #         pos_rew += 5
-        #     pos_rew -= min(
-        #         [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
-        # return pos_rew + adv_rew
-
         if mode:
             print("\treward:\t" + str(adv_rew + hit_rew))
-        return adv_rew + hit_rew - 5
+        return adv_rew + hit_rew
 
     def adversary_reward(self, agent, world, mode = None):
         if mode is None:
@@ -226,7 +202,7 @@ class Scenario(BaseScenario):
             #             break
             if mode:
                 print("\treward:\t" + str(dis_reward + hit_rew))
-            return dis_reward + hit_rew - 5
+            return dis_reward + hit_rew
 
 
         # else:  # proximity-based reward (binary)
