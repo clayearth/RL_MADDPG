@@ -96,7 +96,7 @@ class Scenario(BaseScenario):
                 agent.state.p_vel = np.zeros(world.dim_p)
                 agent.palstance = np.zeros(1)
                 if agent.adversary:
-                    dis = 3
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)

@@ -124,11 +124,41 @@ class World(object):
     def scripted_agents(self):
         return [agent for agent in self.agents if agent.action_callback is not None]
 
+    @property
+    def adversary_agents(self):
+        return [agent for agent in self.agents if agent.adversary]
+
+    # get agent's dis
+    def get_dis(self,agent_a,agent_b):
+        return np.sqrt(np.sum(np.square(agent_a.state.p_pos - agent_b.state.p_pos)))
+
     # update state of the world
     def step(self):
-        # set actions for scripted agents 
-        for agent in self.scripted_agents:
-            agent.action = agent.action_callback(agent, self)
+        # Closing policy
+        for agent in self.agents:
+            if not agent.adversary:
+                # TODO policy of closing method
+                close = False
+                advs = self.adversary_agents
+                for adv in advs:
+                    if self.get_dis(agent,adv) < 3:
+                        close = True
+                        break
+                if not close:
+                    agent.action.u[0] = agent.max_speed
+                    rdm_adversary = np.random.choice(advs)
+                    pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
+                    agent.action.u[1] = ((math.atan2(pos_dif[1],pos_dif[0])-agent.state.p_vel[1])
+                                         *400*6/math.pi)
+                    if agent.action.u[1] > 1:
+                       agent.action.u[1] = 1
+                    elif agent.action.u[1] < -1:
+                       agent.action.u[1] = -1
+
+        # # set actions for scripted agents
+        # for agent in self.scripted_agents:
+        #     agent.action = agent.action_callback(agent, self)
+
         # gather forces applied to entities
         p_force = [None] * len(self.entities)
         # apply agent physical controls
@@ -171,7 +201,7 @@ class World(object):
             if not entity.movable: continue
             # TODO 控制周期
             for control_term in range(self.K):
-                entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
+                # entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
                 if (p_force[i] is not None):
                     #TODO entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
                     v_uc = (p_force[i][0] + 1) * entity.max_speed/2
