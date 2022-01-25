@@ -192,6 +192,7 @@ class World(object):
                     #                                                   np.square(entity.state.p_vel[1])) * entity.max_speed
                     if abs(entity.state.p_vel[0]) > entity.max_speed:
                         entity.state.p_vel[0] = entity.state.p_vel[0]/abs(entity.state.p_vel[0])*entity.max_speed
+                if
                 entity.state.p_pos[0] += entity.state.p_vel[0]*math.cos(entity.state.p_vel[1]) * self.dt
                 entity.state.p_pos[1] += entity.state.p_vel[0]*math.sin(entity.state.p_vel[1]) * self.dt
                 # print("entity.state.p_pos",entity.state.p_pos)

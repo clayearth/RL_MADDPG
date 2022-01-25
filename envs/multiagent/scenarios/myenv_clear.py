@@ -6,7 +6,7 @@ from multiagent.scenario import BaseScenario
 
 class Scenario(BaseScenario):
     def __init__(self):
-        self.hit_radius = 0.5
+        self.hit_radius = 0.1
         self.mode = 0 # 0->"train"; 1->"evaluate for one esposide"
     def make_world(self):
         world = World()
@@ -24,7 +24,7 @@ class Scenario(BaseScenario):
             agent.silent = True
             agent.adversary = True if i < num_adversaries else False
             # agent.size = 0.04
-            agent.size = 0.5 if agent.adversary else 0.5 # 0.5; 0.4
+            agent.size = 0.2 if agent.adversary else 0.2 # 0.5; 0.4
             # agent.accel = 4.0 if agent.adversary else 3.0
             # TODO anget sensitivity, turning theta
             # agent.accel = math.pi/6 if agent.adversary else math.pi/6
@@ -35,7 +35,7 @@ class Scenario(BaseScenario):
             landmark.name = 'landmark %d' % i
             landmark.collide = False
             landmark.movable = False
-            landmark.size = 0.6 # 0.6
+            landmark.size = 0.25 # 0.6
         # make initial conditions
         self.reset_world(world)
         return world
@@ -71,7 +71,7 @@ class Scenario(BaseScenario):
                 agent.palstance = np.zeros(1)
                 if agent.adversary:
                     # agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
-                    dis = 5
+                    dis = 3
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -79,7 +79,7 @@ class Scenario(BaseScenario):
                     agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])+math.pi/6*np.random.normal(0,1)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2
+                    dis = 1
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
@@ -96,13 +96,13 @@ class Scenario(BaseScenario):
                 agent.state.p_vel = np.zeros(world.dim_p)
                 agent.palstance = np.zeros(1)
                 if agent.adversary:
-                    dis = 5
+                    dis = 3
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 2
+                    dis = 1
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
