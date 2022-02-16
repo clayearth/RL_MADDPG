@@ -10,6 +10,8 @@ class EntityState(object):
         self.p_pos = None
         # physical velocity
         self.p_vel = None
+        # palstance
+        self.palstance = None
 
 # state of agents (including communication and internal/mental state)
 class AgentState(EntityState):
@@ -49,8 +51,7 @@ class Entity(object):
         # mass
         self.initial_mass = 1.0
 
-        # palstance
-        self.palstance = None
+
 
     @property
     def mass(self):
@@ -134,31 +135,30 @@ class World(object):
 
     # update state of the world
     def step(self):
-        # Closing policy
-        for agent in self.agents:
-            if not agent.adversary:
-                # TODO policy of closing method
-                close = False
-                advs = self.adversary_agents
-                for adv in advs:
-                    if self.get_dis(agent,adv) < 3:
-                        close = True
-                        break
-                if not close:
-                    agent.action.u[0] = agent.max_speed
-                    rdm_adversary = np.random.choice(advs)
-                    pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
-                    agent.action.u[1] = ((math.atan2(pos_dif[1],pos_dif[0])-agent.state.p_vel[1])
-                                         *400*6/math.pi)
-                    if agent.action.u[1] > 1:
-                       agent.action.u[1] = 1
-                    elif agent.action.u[1] < -1:
-                       agent.action.u[1] = -1
+        # # Closing policy
+        # for agent in self.agents:
+        #     if not agent.adversary:
+        #         # TODO policy of closing method
+        #         close = False
+        #         advs = self.adversary_agents
+        #         for adv in advs:
+        #             if self.get_dis(agent,adv) < 3:
+        #                 close = True
+        #                 break
+        #         if not close:
+        #             agent.action.u[0] = agent.max_speed
+        #             rdm_adversary = np.random.choice(advs)
+        #             pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
+        #             agent.action.u[1] = ((math.atan2(pos_dif[1],pos_dif[0])-agent.state.p_vel[1])
+        #                                  *400*6/math.pi)
+        #             if agent.action.u[1] > 1:
+        #                agent.action.u[1] = 1
+        #             elif agent.action.u[1] < -1:
+        #                agent.action.u[1] = -1
 
         # # set actions for scripted agents
-        # for agent in self.scripted_agents:
-        #     agent.action = agent.action_callback(agent, self)
-
+        for agent in self.scripted_agents:
+            agent.action = agent.action_callback(agent, self)
         # gather forces applied to entities
         p_force = [None] * len(self.entities)
         # apply agent physical controls
@@ -214,11 +214,11 @@ class World(object):
                         if abs(entity.state.p_vel[0]) > entity.max_speed:
                             entity.state.p_vel[0] = entity.state.p_vel[0]/abs(entity.state.p_vel[0])*entity.max_speed
                     omega_uc = p_force[i][1] * math.pi/6
-                    entity.palstance = entity.palstance*8/9 + omega_uc/9
-                    if abs(entity.palstance) > math.pi/6:
-                        entity.palstance = entity.palstance/abs(entity.palstance)*math.pi/6
-                    entity.state.p_vel[1] = entity.state.p_vel[1] + entity.palstance*self.dt
-                    if abs(entity.state.p_vel[1]) > math.pi*2:
+                    entity.state.palstance = entity.state.palstance*8/9 + omega_uc/9
+                    if abs(entity.state.palstance) > math.pi/6:
+                        entity.state.palstance = entity.state.palstance/abs(entity.state.palstance)*math.pi/6
+                    entity.state.p_vel[1] = entity.state.p_vel[1] + entity.state.palstance*self.dt
+                    if abs(entity.state.p_vel[1]) > math.pi:
                         entity.state.p_vel[1] = entity.state.p_vel[1] % math.pi*2 - math.pi
                     # if control_term==0:
                     #     print('p_force[i]:',p_force[i])

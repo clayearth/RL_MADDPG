@@ -263,7 +263,7 @@ class MultiAgentEnv(gym.Env):
             from multiagent import rendering
             # update bounds to center around agent
             # TODO cam_range decide windows' size
-            cam_range = 40
+            cam_range = 100
             if self.shared_viewer:
                 pos = np.zeros(self.world.dim_p)
             else:
