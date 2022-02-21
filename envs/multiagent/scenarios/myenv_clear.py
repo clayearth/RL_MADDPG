@@ -165,8 +165,13 @@ class Scenario(BaseScenario):
             hit_rew = 0
             for a in adversary_agents:
                 # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
-                adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
-                if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
+                # adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
+                pos_dif = a.state.p_pos-agent.state.p_pos
+                real_angle = math.atan2(pos_dif[1],pos_dif[0])
+                ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+                guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+                adv_rew = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+            if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
                     hit_rew += 50000
 
         if mode:
@@ -180,7 +185,12 @@ class Scenario(BaseScenario):
         # Rewarded based on proximity to the goal landmark
         shaped_reward = True
         if shaped_reward:  # distance-based reward
-            dis_reward = -np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
+            # dis_reward = -np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
+            pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
+            real_angle = math.atan2(pos_dif[1],pos_dif[0])
+            ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+            guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+            dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
             hit_rew = 0
             if (-dis_reward) < self.hit_radius: # big reward for hit
                 hit_rew += 50000
@@ -233,7 +243,7 @@ class Scenario(BaseScenario):
                     infos["goodagent"][0].append(a.state.p_pos)
                     infos["goodagent"][1].append(a.state.p_vel)
                     infos["goodagent"][2].append(self.agent_reward(a,world,mode=0))
-            # print(infos)
+            print(infos)
         else:
             infos = None
         return infos
