@@ -170,12 +170,12 @@ class Scenario(BaseScenario):
                 real_angle = math.atan2(pos_dif[1],pos_dif[0])
                 ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
                 guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
-                adv_rew = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
-            if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # big reward for hit
+                adv_rew += agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+            if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) <= self.hit_radius: # big reward for hit
                     hit_rew += 50000
 
-        if mode:
-            print("\treward:\t" + str(adv_rew + hit_rew))
+        # if mode:
+        #     print("\treward:\t" + str(adv_rew + hit_rew))
         return adv_rew + hit_rew
 
     def adversary_reward(self, agent, world, mode = None):
@@ -192,15 +192,15 @@ class Scenario(BaseScenario):
             guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
             dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
             hit_rew = 0
-            if (-dis_reward) < self.hit_radius: # big reward for hit
+            if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) <= self.hit_radius: # big reward for hit
                 hit_rew += 50000
             # else:
             #     for a in self.good_agents(world):
             #         if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # be hitten big bad reward
             #             hit_rew -= 10000
             #             break
-            if mode:
-                print("\treward:\t" + str(dis_reward + hit_rew))
+            # if mode:
+            #     print("\treward:\t" + str(dis_reward + hit_rew))
             return dis_reward + hit_rew
 
     def observation(self, agent, world):
@@ -213,11 +213,12 @@ class Scenario(BaseScenario):
         for other in world.agents:
             if other is agent: continue
             other_pos.append(other.state.p_pos - agent.state.p_pos)
+            other_pos.append(other.state.p_vel)
 
-        if self.mode:
-            print(agent.name + "\t" + ("adversary" if agent.adversary else "good agent")
-                  + "\tpos: " + str(agent.state.p_pos) + "\tvel:" + str(agent.state.p_vel) + "\t"
-                  + "%.6f" %np.sqrt(np.sum(np.square(agent.state.p_vel))),end="")
+        # if self.mode:
+        #     print(agent.name + "\t" + ("adversary" if agent.adversary else "good agent")
+        #           + "\tpos: " + str(agent.state.p_pos) + "\tvel:" + str(agent.state.p_vel) + "\t"
+        #           + "%.6f" %np.sqrt(np.sum(np.square(agent.state.p_vel))),end="")
 
         if not agent.adversary: # 如果是追击者
             # return np.concatenate([agent.goal_a.state.p_pos - agent.state.p_pos] + entity_pos + other_pos)
@@ -243,7 +244,7 @@ class Scenario(BaseScenario):
                     infos["goodagent"][0].append(a.state.p_pos)
                     infos["goodagent"][1].append(a.state.p_vel)
                     infos["goodagent"][2].append(self.agent_reward(a,world,mode=0))
-            print(infos)
+            # print(infos)
         else:
             infos = None
         return infos
