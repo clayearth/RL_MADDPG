@@ -181,7 +181,8 @@ if __name__ == '__main__':
                         help="Batch size for model training")
     # 探索量，计算探索度=max(0,n_exploration_eps-now_episodes)/n_exploration_eps，随着训练从1线性减小至0，初始25000
     parser.add_argument("--n_exploration_eps", default=EPOSODE, type=int)
-    parser.add_argument("--init_noise_scale", default=0.3, type=float) # 初始化噪声量度,默认为0.3
+    #TODO change noise_scale in main.py
+    parser.add_argument("--init_noise_scale", default=0.6, type=float) # 初始化噪声量度,默认为0.3
     parser.add_argument("--final_noise_scale", default=0.0, type=float) # 最后噪声量度，二者与探索度一起决定最终噪声量
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
     parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目

@@ -61,21 +61,21 @@ class Scenario(BaseScenario):
                 agent.state.palstance = np.zeros(1)
                 if agent.adversary:
                     # agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
-                    dis = 100
+                    dis = 10
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
-                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])+math.pi/6*np.random.normal(0,1)
+                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])#+math.pi/6*np.random.normal(0,1)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 10
+                    dis = 2
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
                     rdm_adversary = np.random.choice(self.adversaries(world))
                     pos_dif = rdm_adversary.state.p_pos-agent.state.p_pos
-                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])+math.pi/6*np.random.normal(0,1)
+                    agent.state.p_vel[1] = math.atan2(pos_dif[1],pos_dif[0])#+math.pi/6*np.random.normal(0,1)
                     # print(agent.state.p_vel[1]*180/math.pi)
 
         elif self.mode == 1: # for testing
@@ -86,13 +86,13 @@ class Scenario(BaseScenario):
                 agent.state.p_vel = np.zeros(world.dim_p)
                 agent.state.palstance = np.zeros(1)
                 if agent.adversary:
-                    dis = 100
+                    dis = 10
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
                     agent.state.c = np.zeros(world.dim_c)
                 else:
-                    dis = 10
+                    dis = 2
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
 
@@ -165,12 +165,12 @@ class Scenario(BaseScenario):
             hit_rew = 0
             for a in adversary_agents:
                 # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
-                # adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
-                pos_dif = a.state.p_pos-agent.state.p_pos
-                real_angle = math.atan2(pos_dif[1],pos_dif[0])
-                ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
-                guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
-                adv_rew += agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+                adv_rew -= np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
+                # pos_dif = a.state.p_pos-agent.state.p_pos
+                # real_angle = math.atan2(pos_dif[1],pos_dif[0])
+                # ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+                # guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+                # adv_rew += agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
             if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) <= self.hit_radius: # big reward for hit
                     hit_rew += 50000
 
@@ -185,12 +185,12 @@ class Scenario(BaseScenario):
         # Rewarded based on proximity to the goal landmark
         shaped_reward = True
         if shaped_reward:  # distance-based reward
-            # dis_reward = -np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
-            pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
-            real_angle = math.atan2(pos_dif[1],pos_dif[0])
-            ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
-            guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
-            dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+            dis_reward = -np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
+            # pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
+            # real_angle = math.atan2(pos_dif[1],pos_dif[0])
+            # ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+            # guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+            # dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
             hit_rew = 0
             if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) <= self.hit_radius: # big reward for hit
                 hit_rew += 50000
