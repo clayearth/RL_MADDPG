@@ -180,16 +180,13 @@ class MultiAgentEnv(gym.Env):
                     agent.action.u = action[0]
                     # print(action[0])
 
-                    # TODO 应考虑转向角度范围的问题, 目前表征转向角
-                    # sensitivity =  math.pi/6 # 5.0
-                    # if agent.accel is not None:
-                    #     sensitivity = agent.accel
-                    # agent.action.u[1] *= sensitivity
-                    action = action[1:]
+            # TODO 应考虑转向角度范围的问题, 目前表征转向角
+            action = action[1:]
 
             # sensitivity =  math.pi/6 # 5.0
             # if agent.accel is not None:
             #     sensitivity = agent.accel
+            
             # agent.action.u *= sensitivity
             # action = action[1:]
             # print(deepcopy(agent.action.u))
@@ -263,7 +260,7 @@ class MultiAgentEnv(gym.Env):
             from multiagent import rendering
             # update bounds to center around agent
             # TODO cam_range decide windows' size
-            cam_range = 15
+            cam_range = 75
             if self.shared_viewer:
                 pos = np.zeros(self.world.dim_p)
             else:

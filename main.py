@@ -11,8 +11,9 @@ from utils.make_env import make_env
 from utils.buffer import ReplayBuffer
 from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 from algorithms.maddpg import MADDPG
+import matplotlib.pyplot as plt
 
-USE_CUDA = False # torch.cuda.is_available()
+USE_CUDA = True # torch.cuda.is_available()
 # print(USE_CUDA)
 
 #生成并行训练环境
@@ -72,6 +73,7 @@ def run(config):
                                  [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
                                   for acsp in env.action_space])
     t = 0
+    all_rewards = []
     for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
         print("Episodes %i-%i of %i" % (ep_i + 1,
                                         ep_i + 1 + config.n_rollout_threads,
@@ -90,6 +92,7 @@ def run(config):
         # 如果discrete_action=False，为连续动作空间，则每次重置噪声self.exploration = OUNoise.reset()
         maddpg.reset_noise()
 
+        per_episode_rewards = []
         for et_i in range(config.episode_length):
             calc_start = time.time()
             # rearrange observations to be per agent, and convert to torch Variable
@@ -106,14 +109,16 @@ def run(config):
             actions = [[ac[i] for ac in agent_actions] for i in range(config.n_rollout_threads)]
 
             next_obs, rewards, dones, infos = env.step(actions)
+            per_episode_rewards.append(rewards.mean(axis=0))
             # print(next_obs, rewards, dones, infos)
 
-            # ifi = 1 / 60  # inter-frame interval
-            # calc_end = time.time()
-            # elapsed = calc_end - calc_start
-            # if elapsed < ifi:
-            #     time.sleep(ifi - elapsed)
-            # env.envs[0].render('human')
+            if ep_i % 100 == 0:
+                ifi = 1 / 60  # inter-frame interval
+                calc_end = time.time()
+                elapsed = calc_end - calc_start
+                if elapsed < ifi:
+                    time.sleep(ifi - elapsed)
+                env.envs[0].render('human')
 
             replay_buffer.push(obs, agent_actions, rewards, next_obs, dones) # 缓冲区
             obs = next_obs # 更新obs
@@ -138,7 +143,7 @@ def run(config):
             # judge hit(break) condition
             if True in dones:
                 break
-
+        all_rewards.append(np.array(per_episode_rewards).mean(axis=0))
         ep_rews = replay_buffer.get_average_rewards(
             config.episode_length * config.n_rollout_threads)
 
@@ -159,9 +164,25 @@ def run(config):
     logger.export_scalars_to_json(str(log_dir / 'summary.json'))
     logger.close()
 
+    # plot reward in training
+    plt.figure(1)
+    # print(all_rewards)
+    lips = len(all_rewards)
+    step_list = list(elem*config.n_rollout_threads for elem in range(lips))
+    all_rewards = np.array(all_rewards)
+    plt.plot(step_list,all_rewards[:,0],label=('e_1'))
+    plt.plot(step_list,all_rewards[:,1],label=('p_1'))
+    plt.plot(step_list,all_rewards[:,2],label=('p_2'))
+    plt.legend()
+    plt.xlabel('episodes')
+    plt.ylabel('average rewards')
+
+    plt.savefig(run_dir / "train_reward.png")
+    plt.show()
+
 
 if __name__ == '__main__':
-    EPOSODE = 25000
+    EPOSODE = 100000
     parser = argparse.ArgumentParser()
     parser.add_argument("env_id", help="Name of environment") # Name of environment
     parser.add_argument("model_name",
@@ -170,28 +191,28 @@ if __name__ == '__main__':
     parser.add_argument("--seed",
                         default=1, type=int,
                         help="Random seed") # 随机种子
-    parser.add_argument("--n_rollout_threads", default=10, type=int) # 并行训练环境数 1
+    parser.add_argument("--n_rollout_threads", default=1, type=int) # 并行训练环境数 1
     parser.add_argument("--n_training_threads", default=26, type=int) # CPU线程数 6
-    parser.add_argument("--buffer_length", default=int(2*1e6), type=int) # 缓冲器大小 1e6
+    parser.add_argument("--buffer_length", default=int(1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
     parser.add_argument("--episode_length", default=800, type=int) # 单次训练数据组数 25
     parser.add_argument("--steps_per_update", default=100,type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
-                        default=1024, type=int,
+                        default=4096, type=int,
                         help="Batch size for model training")
     # 探索量，计算探索度=max(0,n_exploration_eps-now_episodes)/n_exploration_eps，随着训练从1线性减小至0，初始25000
     parser.add_argument("--n_exploration_eps", default=EPOSODE, type=int)
-    parser.add_argument("--init_noise_scale", default=0.3, type=float) # 初始化噪声量度,默认为0.3
+    parser.add_argument("--init_noise_scale", default=1, type=float) # 初始化噪声量度,默认为0.3
     parser.add_argument("--final_noise_scale", default=0.0, type=float) # 最后噪声量度，二者与探索度一起决定最终噪声量
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
     parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目
-    parser.add_argument("--lr", default=0.01, type=float) # 学习率0.01
-    parser.add_argument("--tau", default=0.02, type=float)
+    parser.add_argument("--lr", default=0.02, type=float) # 学习率0.01
+    parser.add_argument("--tau", default=0.01, type=float)
     parser.add_argument("--agent_alg", # 智能体算法
                         default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'])
     parser.add_argument("--adversary_alg", # 对手/逃逸者算法
-                        default="MADDPG", type=str,
+                        default="DDPG", type=str,
                         choices=['MADDPG', 'DDPG'])
     # parser.add_argument("--discrete_action", # 离散动作空间，触发时为真(离散)，不触发时为假(连续)
     #                     default=False)

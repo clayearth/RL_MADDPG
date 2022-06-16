@@ -152,7 +152,8 @@ class MADDPG(object):
                 elif self.discrete_action:
                     all_pol_acs.append(onehot_from_logits(pi(ob)))
                 else:
-                    all_pol_acs.append(pi(ob))
+                    # all_pol_acs.append(pi(ob))
+                    all_pol_acs.append(curr_pol_vf_in)
             vf_in = torch.cat((*obs, *all_pol_acs), dim=1)
         else:  # DDPG
             vf_in = torch.cat((obs[agent_i], curr_pol_vf_in),
@@ -231,7 +232,7 @@ class MADDPG(object):
 
     @classmethod
     def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
-                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64):
+                      gamma=0.95, tau=0.02, lr=0.01, hidden_dim=64):
         """
         Instantiate instance of this class from multi-agent environment
         """

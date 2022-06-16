@@ -43,7 +43,7 @@ def run(config):
         p_vel = [[] for i in range(2)]
         e_reward = [[] for i in range(1)]
         p_reward = [[] for i in range(2)]
-
+    ts = [[],[]]
     for ep_i in range(config.n_episodes):
         print("Episode %i of %i" % (ep_i + 1, config.n_episodes))
         obs = env.reset()
@@ -62,7 +62,9 @@ def run(config):
             torch_actions = maddpg.step(torch_obs, explore=False)
             # convert actions to numpy arrays
             actions = [ac.data.numpy().flatten() for ac in torch_actions]
+            # print(actions) # 三个智能体模型给出的动作决策，整体模型的输出控制量，(action[i][0] + 1.5 )*2为控制量速度v, action[i][1]*pi/2为控制量omega
             obs, rewards, dones, infos = env.step(actions)
+            # print(obs) # 三个智能体的观测结果，整体模型的输入控制量，每个智能体均为[自身速度v,theta + 自身角速度omega + 与基地的相对距离x,y + 其他智能体的相对距离和他们的速度x,y,v,theta]
 
             if config.n_episodes == 1:
                 for i in range(infos["n_adv"]):
@@ -76,20 +78,23 @@ def run(config):
 
             if config.save_gifs:
                 frames.append(env.render('rgb_array')[0])
-            calc_end = time.time()
-            elapsed = calc_end - calc_start
-            if elapsed < ifi:
-                time.sleep(ifi - elapsed)
-            env.render('human')
+            if config.n_episodes == 1:
+                calc_end = time.time()
+                elapsed = calc_end - calc_start
+                if elapsed < ifi:
+                    time.sleep(ifi - elapsed)
+                env.render('human')
 
             # judge hit(break) condition
             if -1 in dones:
                 bad_hit += 1
+                ts[1].append(t_i)
                 print("protection was hit by adversary!")
                 break
             elif 1 in dones:
                 good_hit += 1
                 print("good agents hit adversary!")
+                ts[0].append(t_i)
                 break
             elif t_i == config.episode_length-1:
                 out_of_episode_length += 1
@@ -101,12 +106,14 @@ def run(config):
             imageio.mimsave(str(gif_path / ('%i_%i.gif' % (gif_num, ep_i))),
                             frames, duration=ifi)
     print("-------------------------------------------------------------------")
-    print("Episodes: %d, good hit: %d, bad hit: %d, good hit percent: %.2f"
-          %(config.n_episodes, good_hit, bad_hit, good_hit*1.0/config.n_episodes))
+    # print("Episodes: %d, good hit: %d, bad hit: %d, good hit percent: %.3f, good ave step:  %.1f, bad ave step:  %.1f"
+    #       %(config.n_episodes, good_hit, bad_hit, good_hit*1.0/config.n_episodes, np.mean(np.array(ts[0])),np.mean(np.array(ts[1]))))
+    print("Episodes: %d, good hit: %d, bad hit: %d, good hit percent: %.3f"
+          %(config.n_episodes, good_hit, bad_hit, good_hit*1.0/config.n_episodes ))
 
     # from msvcrt import getch
     # getch()
-
+    #
     if config.n_episodes == 1:
         plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward)
 
@@ -160,7 +167,7 @@ def plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward):
         # plt.plot(step_list, np.array([math.atan2(e_vel_arr[i][m][1],e_vel_arr[i][m][0])*180/math.pi for m in step_list]), ls='-', label=("e"+str(i)+"-vel-theta"))
         for j in range(2):
             if i==0:
-                plt.plot(step_list, np.array([math.atan2(p_vel_arr[j][m][1],p_vel_arr[j][m][0])*180/math.pi for m in step_list]), ls = line_shape[j], label=("p"+str(j)+"-vel-theta"))
+                plt.plot(step_list, np.array([p_vel_arr[j][m][1]*180/math.pi for m in step_list]), ls = line_shape[j], label=("p"+str(j)+"-vel-theta"))
             plt.plot(step_list, dis_theta_arr[i][j], ls = line_shape[j], label=("p"+str(j)+"_e"+str(i)+"_dis_theta"))
     plt.legend()
     plt.xlabel('step')
@@ -168,9 +175,9 @@ def plotpics(e_pos,p_pos,e_vel,p_vel,e_reward,p_reward):
 
     plt.figure(4) # darw v of e & p
     for i in range(1): # plot vel of e
-        plt.plot(step_list, np.array([np.sqrt(np.sum(np.square(e_vel_arr[i][m]))) for m in step_list]), label=('v_e_'+str(i)))
+        plt.plot(step_list, np.array([e_vel_arr[i][m][0] for m in step_list]), label=('v_e_'+str(i)))
     for i in range(2): # plot vel of p
-        plt.plot(step_list, np.array([np.sqrt(np.sum(np.square(p_vel_arr[i][m]))) for m in step_list]), label=('v_p_'+str(i)))
+        plt.plot(step_list, np.array([p_vel_arr[i][m][0] for m in step_list]), label=('v_p_'+str(i)))
     plt.legend()
     plt.xlabel('step')
     plt.ylabel('v')
@@ -197,8 +204,8 @@ if __name__ == '__main__':
     parser.add_argument("--incremental", default=None, type=int,
                         help="Load incremental policy from given episode " +
                              "rather than final policy") # 如果采用某一次中间策略而不是最终策略
-    parser.add_argument("--n_episodes", default=1, type=int) # 测试轮数
-    parser.add_argument("--episode_length", default=600, type=int) #每轮测试步长
+    parser.add_argument("--n_episodes", default=1000, type=int) # 测试轮数
+    parser.add_argument("--episode_length", default=1200, type=int) #每轮测试步长
     parser.add_argument("--fps", default=60, type=int) # 帧数
 
     config = parser.parse_args()

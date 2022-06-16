@@ -51,8 +51,6 @@ class Entity(object):
         # mass
         self.initial_mass = 1.0
 
-
-
     @property
     def mass(self):
         return self.initial_mass
@@ -204,7 +202,7 @@ class World(object):
                 # entity.state.p_vel = entity.state.p_vel * (1 - self.damping)
                 if (p_force[i] is not None):
                     #TODO entity.state.p_vel += (p_force[i] / entity.mass) * self.dt
-                    v_uc = (p_force[i][0] + 1) * entity.max_speed/2
+                    v_uc = (p_force[i][0] + 1.5 )*2 #* entity.max_speed/2
                     entity.state.p_vel[0] = (entity.state.p_vel[0] / 9) * 8 + v_uc/9
                     if entity.max_speed is not None:
                         # speed = np.sqrt(np.square(entity.state.p_vel[0]) + np.square(entity.state.p_vel[1]))
@@ -213,10 +211,10 @@ class World(object):
                         #                                                   np.square(entity.state.p_vel[1])) * entity.max_speed
                         if abs(entity.state.p_vel[0]) > entity.max_speed:
                             entity.state.p_vel[0] = entity.state.p_vel[0]/abs(entity.state.p_vel[0])*entity.max_speed
-                    omega_uc = p_force[i][1] * math.pi/6
+                    omega_uc = p_force[i][1] * math.pi/2
                     entity.state.palstance = entity.state.palstance*8/9 + omega_uc/9
-                    if abs(entity.state.palstance) > math.pi/6:
-                        entity.state.palstance = entity.state.palstance/abs(entity.state.palstance)*math.pi/6
+                    if abs(entity.state.palstance) > math.pi/2:
+                        entity.state.palstance = entity.state.palstance/abs(entity.state.palstance)*math.pi/2
                     entity.state.p_vel[1] = entity.state.p_vel[1] + entity.state.palstance*self.dt
                     if abs(entity.state.p_vel[1]) > math.pi:
                         entity.state.p_vel[1] = entity.state.p_vel[1] % math.pi*2 - math.pi

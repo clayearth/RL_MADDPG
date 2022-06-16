@@ -174,7 +174,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_training_threads", default=26, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(2*1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
-    parser.add_argument("--episode_length", default=800, type=int) # 单次训练数据组数 25
+    parser.add_argument("--episode_length", default=600, type=int) # 单次训练数据组数 25
     parser.add_argument("--steps_per_update", default=100,type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
                         default=1024, type=int,
