@@ -98,7 +98,7 @@ class World(object):
         # color dimensionality
         self.dim_color = 3
         # simulation timestep
-        self.dt = 0.0025
+        self.dt = 0.0025 #0.0025
         # physical damping
         self.damping = 0 # 0.25
         # contact response parameters
