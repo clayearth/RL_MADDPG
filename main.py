@@ -1,4 +1,6 @@
 import argparse
+import pickle
+
 import torch
 import time
 import os
@@ -9,6 +11,7 @@ from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 from utils.make_env import make_env
 from utils.buffer import ReplayBuffer
+from utils.plotdata import smooth1
 from utils.env_wrappers import SubprocVecEnv, DummyVecEnv
 from algorithms.maddpg import MADDPG
 import matplotlib.pyplot as plt
@@ -63,7 +66,7 @@ def run(config):
     env = make_parallel_env(config.env_id, config.n_rollout_threads, config.seed,
                             config.discrete_action)
     # MADDPG模型
-    maddpg = MADDPG.init_from_env(env, agent_alg=config .agent_alg,
+    maddpg = MADDPG.init_from_env(env, agent_alg=config.agent_alg,
                                   adversary_alg=config.adversary_alg,
                                   tau=config.tau,
                                   lr=config.lr,
@@ -75,8 +78,6 @@ def run(config):
                                  [acsp.shape[0] if isinstance(acsp, Box) else acsp.n
                                   for acsp in env.action_space])
     t = 0
-    mean = []
-    std = []
     all_rewards = []
     # 总训练轮次/并行环境数 循环
     for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
@@ -150,7 +151,8 @@ def run(config):
             # judge hit(break) condition
             if True in dones:
                 break
-        all_rewards.append(np.array(per_episode_rewards).mean(axis=0))
+        if t % 100 == 0:
+            all_rewards.append(np.array(per_episode_rewards).mean(axis=0))
         ep_rews = replay_buffer.get_average_rewards(
             config.episode_length * config.n_rollout_threads)
 
@@ -187,6 +189,7 @@ def run(config):
     for i in range(agent_num):
         roll_reward.append(all_rewards[:,:,i].transpose())
     roll_reward = np.array(roll_reward)
+
     # print(roll_reward)
 
     sns.set(style="darkgrid", font_scale=1)
@@ -195,10 +198,18 @@ def run(config):
     label = ['escapee1', 'pursuer1', 'pursuer2']
     df = []
     # print(pd.DataFrame(data[i], columns=[list((elem+1)*config.n_rollout_threads for elem in range(epochs))]))
+    os.makedirs(run_dir / 'agent_data', exist_ok=True)
     for i in range(len(data)):
-        df.append(pd.DataFrame(data[i], columns=[list((elem+1)*config.n_rollout_threads/1e5 for elem in range(epochs))])\
-                  .melt(var_name='episode', value_name='reward'))
+        d = pd.DataFrame(data[i], columns=[list(elem*config.n_rollout_threads*500/1e5 for elem in range(epochs))]) \
+            .melt(var_name='episode', value_name='reward')
+        df.append(d)
+        with open(run_dir / 'agent_data' / os.path.join("agent_"+ str(i)+ "_reward_" + config.env_id + config.model_name +".pkl"), "wb") as f:
+            pickle.dump(d, f, pickle.HIGHEST_PROTOCOL)
         df[i]['agent'] = label[i]
+
+    for i in range(agent_num):
+        df[i]["reward"] = smooth1(df[i], "episode", "reward")
+
     # print(df)
     df = pd.concat(df)
     df.index = range(len(df))
@@ -225,12 +236,12 @@ def run(config):
     # plt.xlabel('episodes')
     # plt.ylabel('average rewards')
 
-    plt.savefig(run_dir / "train_reward.png")
+    plt.savefig(run_dir / "train_reward.svg")
     plt.show()
 
 
 if __name__ == '__main__':
-    EPOSODE = 25000
+    EPOSODE = 5000
     parser = argparse.ArgumentParser()
     parser.add_argument("env_id", help="Name of environment") # Name of environment
     parser.add_argument("model_name",
@@ -239,21 +250,21 @@ if __name__ == '__main__':
     parser.add_argument("--seed",
                         default=1, type=int,
                         help="Random seed") # 随机种子
-    parser.add_argument("--n_rollout_threads", default=10, type=int) # 并行训练环境数 1
+    parser.add_argument("--n_rollout_threads", default=1, type=int) # 并行训练环境数 1
     parser.add_argument("--n_training_threads", default=26, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
-    parser.add_argument("--episode_length", default=40, type=int) # 单次训练数据组数 25
+    parser.add_argument("--episode_length", default=400, type=int) # 单次训练数据组数 25
     parser.add_argument("--steps_per_update", default=100, type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
-                        default=1024, type=int,
+                        default=4096, type=int,
                         help="Batch size for model training")
     # 探索量，计算探索度=max(0,n_exploration_eps-now_episodes)/n_exploration_eps，随着训练从1线性减小至0，初始25000
     parser.add_argument("--n_exploration_eps", default=EPOSODE, type=int)
-    parser.add_argument("--init_noise_scale", default=0.3, type=float) # 初始化噪声量度,默认为0.3
+    parser.add_argument("--init_noise_scale", default=1.0, type=float) # 初始化噪声量度,默认为0.3
     parser.add_argument("--final_noise_scale", default=0.0, type=float) # 最后噪声量度，二者与探索度一起决定最终噪声量
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
-    parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目
+    parser.add_argument("--hidden_dim", default=512, type=int) # 隐藏层数目
     parser.add_argument("--lr", default=0.01, type=float) # 学习率0.01
     parser.add_argument("--tau", default=0.01, type=float)
     parser.add_argument("--agent_alg", # 智能体算法
