@@ -66,7 +66,7 @@ class Scenario(BaseScenario):
                 agent.state.palstance = np.zeros(1)
                 if agent.adversary:
                     # agent.state.p_pos = np.random.uniform(-10, +10, world.dim_p)
-                    dis = 5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -91,7 +91,7 @@ class Scenario(BaseScenario):
                 agent.state.p_vel = np.zeros(world.dim_p)
                 agent.state.palstance = np.zeros(1)
                 if agent.adversary:
-                    dis = 5
+                    dis = 20
                     rdm = np.random.random()*2*math.pi
                     agent.state.p_pos = world.landmarks[0].state.p_pos + dis*np.array([math.sin(rdm),math.cos(rdm)])
                     agent.state.p_vel = np.zeros(world.dim_p)
@@ -172,21 +172,23 @@ class Scenario(BaseScenario):
             adv_rew = 0
             hit_rew = 0
             for a in adversary_agents:
+                ### DISTANCE REWARD FUNCTION
                 # adv_rew += 0.5*np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) # every adversary's dis to goal
-                # adv_rew -= 0.1 * np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
+                adv_rew -= 0.1 * np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) # every agent's dis to adversary
                 mis_dis = min([np.sqrt(np.sum(np.square(a.state.p_pos - good_a.state.p_pos))) for good_a in agents])
-                pos_dif = a.state.p_pos-agent.state.p_pos
-                if np.sqrt(np.sum(np.square(pos_dif))) > 0:#5:
-                    real_angle = math.atan2(pos_dif[1],pos_dif[0])
-                    ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
-                    guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
-                    adv_rew += agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+                ### ANGLE REWARD FUNCTION
+                # pos_dif = a.state.p_pos-agent.state.p_pos
+                # if np.sqrt(np.sum(np.square(pos_dif))) > 0:#5:
+                #     real_angle = math.atan2(pos_dif[1],pos_dif[0])
+                #     ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+                #     guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+                #     adv_rew += agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
                 # if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) <= self.hit_radius: # big reward for hit
                 #         hit_rew += 5
                 # else:0
                 #     adv_rew -= 0.2 * mis_dis
                 if mis_dis <= self.hit_radius: # big reward for hit
-                    hit_rew += 20
+                    hit_rew += 500
         # if mode:
         #     print("\treward:\t" + str(adv_rew + hit_rew))
         return adv_rew + hit_rew
@@ -198,17 +200,20 @@ class Scenario(BaseScenario):
         # Rewarded based on proximity to the goal landmark
         shaped_reward = True
         if shaped_reward:  # distance-based reward
-            pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
-            if np.sqrt(np.sum(np.square(pos_dif))) > 0:#5:
-                real_angle = math.atan2(pos_dif[1],pos_dif[0])
-                ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
-                guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
-                dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
+            ### ANGLE REWARD FUNCTION
+            # pos_dif = agent.goal_a.state.p_pos-agent.state.p_pos
+            # if np.sqrt(np.sum(np.square(pos_dif))) > 0:#5:
+            #     real_angle = math.atan2(pos_dif[1],pos_dif[0])
+            #     ABVR=agent.state.p_vel[1] - real_angle # angle between v_p and real_angle
+            #     guide_angle=np.minimum(2*math.pi-abs(ABVR),abs(ABVR))  #between [0,pi], reward increases when guide angle go to 0.
+            #     dis_reward = agent.state.p_vel[0] * (math.cos(guide_angle)/(math.sin(guide_angle)+0.1) - 1/(math.sqrt(3)+0.2))
             # else:
             #     dis_reward = - 0.2 * np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
+            ### DISTANCE REWARD FUNCTION
+            dis_reward = - 0.1 * np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
             hit_rew = 0
             if np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))) <= self.hit_radius: # big reward for hit
-                hit_rew += 20
+                hit_rew += 500
             # else:
             #     for a in self.good_agents(world):
             #         if np.sqrt(np.sum(np.square(agent.state.p_pos - a.state.p_pos))) < self.hit_radius: # be hitten big bad reward
