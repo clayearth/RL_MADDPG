@@ -12,7 +12,7 @@ class MADDPG(object):
     Wrapper class for DDPG-esque (i.e. also MADDPG) agents in multi-agent task
     """
     def __init__(self, agent_init_params, alg_types,
-                 gamma=0.98, tau=0.01, lr=0.01, hidden_dim=64,
+                 gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64,
                  discrete_action=False):
         """
         Inputs:
@@ -232,7 +232,7 @@ class MADDPG(object):
 
     @classmethod
     def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
-                      gamma=0.98, tau=0.01, lr=0.01, hidden_dim=64):
+                      gamma=0.95, tau=0.01, lr=0.01, hidden_dim=64):
         """
         Instantiate instance of this class from multi-agent environment
         """

@@ -241,7 +241,7 @@ def run(config):
 
 
 if __name__ == '__main__':
-    EPOSODE = 5000
+    EPOSODE = 50000
     parser = argparse.ArgumentParser()
     parser.add_argument("env_id", help="Name of environment") # Name of environment
     parser.add_argument("model_name",
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     parser.add_argument("--n_training_threads", default=26, type=int) # CPU线程数 6
     parser.add_argument("--buffer_length", default=int(1e6), type=int) # 缓冲器大小 1e6
     parser.add_argument("--n_episodes", default=EPOSODE, type=int) # 总训练轮数，初始 25000
-    parser.add_argument("--episode_length", default=400, type=int) # 单次训练数据组数 25
+    parser.add_argument("--episode_length", default=300, type=int) # 单次训练数据组数 25
     parser.add_argument("--steps_per_update", default=100, type=int) # 网络每组训练步长 100
     parser.add_argument("--batch_size", # Batch size for model training 1024
                         default=4096, type=int,
@@ -264,8 +264,8 @@ if __name__ == '__main__':
     parser.add_argument("--init_noise_scale", default=1.0, type=float) # 初始化噪声量度,默认为0.3
     parser.add_argument("--final_noise_scale", default=0.0, type=float) # 最后噪声量度，二者与探索度一起决定最终噪声量
     parser.add_argument("--save_interval", default=1000, type=int) # 阶段存储参数
-    parser.add_argument("--hidden_dim", default=512, type=int) # 隐藏层数目
-    parser.add_argument("--lr", default=0.01, type=float) # 学习率0.01
+    parser.add_argument("--hidden_dim", default=64, type=int) # 隐藏层数目
+    parser.add_argument("--lr", default=0.02, type=float) # 学习率0.01
     parser.add_argument("--tau", default=0.01, type=float)
     parser.add_argument("--agent_alg", # 智能体算法
                         default="MADDPG", type=str,
